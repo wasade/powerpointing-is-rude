@@ -1,4 +1,4 @@
-PowerpointingIsRude
-===================
+powerpointing is rude
+=====================
 
-A really stupid terminal slide presenter
+A simple terminal based slide presenter because powerpoint is terrible.
