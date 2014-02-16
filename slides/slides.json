@@ -1,0 +1,103 @@
+{
+ "title": {"header": "The Workflow",
+           "body": "",
+           "footer": [
+                "Daniel McDonald",
+                "Code review, 2.17.14"
+           ]
+ },
+ "slide 1": {"header": "Overview",
+             "body": [
+                "We're going to cover a few things:", "",
+                "* The motivation for the Workflow object",
+                "* A refresher on decorators",
+                "* The code (of course!)",
+                "* An example of the Workflow in use"
+            ]
+ },
+ "slide 2": {"header": "Motivation",
+             "body": [
+                "Split libraries is very difficult to maintain", "",
+                "Can the logic be [red](structured) to make the code easier to use?", "",
+                "The problem:", "",
+                "* Lots of options",
+                "* Different types of data", "",
+                "The proposed solution:", "",
+                "* Model the problem as a workflow (e.g., do this, then this, then this)",
+                "* Allow the workflow to be determined at runtime"
+             ]
+ },
+ "slide 3": {"header": "Decorators",
+             "body": [
+                "Decorators are pure [green](niftiness):",
+                "* Modify functions at runtime",
+                "* Add on attributes (e.g., priorities)",
+                "* Manage [red](boilerplate) code",
+                "* Factories on crack", "",
+                "These are used for three different reasons in the Workflow:", "",
+                "* Manage functional requirements: execute if option [blue](foo) is [red](bar)",
+                "* Debug support",
+                "* Function prioritization"
+             ],
+             "footer": "Recommended: http://scipy-lectures.github.io/advanced/advanced_python/"
+ },
+ "slide 4": {"header": "Dec. Example 1",
+             "body": [
+                "Lets start with something simple:", "",
+                "[code]> def simple_decorator(f):",
+                "[code]>     print 'in simple decorator'",
+                "[code]>     def decorated():",
+                "[code]>         print 'in decorated'",
+                "[code]>         f()",
+                "[code]>     return decorated",
+                "[code]> @simple_decorator",
+                "[code]> def to_decorate():",
+                "[code]>     print 'in to_decorate'",
+                "in simple_decorator",
+                "[code]> to_decorate()",
+                "in decorated",
+                "in to_decorate"
+            ]
+ },
+ "slide 5": {"header": "Dec. Example 2",
+             "body": [
+                "But what if we want to pass arguments to the decorator?", "",
+                "[code]> class complex_decorator(object):",
+                "[code]>        def __init__(self, value):",
+                "[code]>                print 'in decorator constructor'",
+                "[code]>                self.value = value",
+                "[code]>        def __call__(self, f):",
+                "[code]>            print 'in decorator call'",
+                "[code]>            def decorated(value_to_function):",
+                "[code]>                print 'in decorated wrapper'",
+                "[code]>                return f(self.value, value_to_function)",
+                "[code]>            return decorated"
+            ]
+ },
+ "slide 6": {"header": "Dec. Example 2",
+             "body": [
+                "[code]> @complex_decorator(10)",
+                "[code]> def some_function(from_decorator, passed_in):",
+                "[code]>    print 'from dec: %d, passed in: %d' % (from_decorator, passed_in)",
+                "in decorator constructor",
+                "in decorator call",
+                "[code]> some_function(20)",
+                "in decorated wrapper",
+                "from dec: 10, passed in: 20"
+            ]
+ },
+ "slide 7": {"header": "All the codes",
+             "body": "Now lets take a look at the Workflow object"
+ },
+ "slide 8": {"header": "WF Example",
+             "body": "A presentation can be modeled as a Workflow..."
+ },
+ "acknowledgements": {"header": "The End",
+                      "body": [
+                        "The following projects were used:", "",
+                        "* Pygments for source code coloring",
+                        "* pyfiglet for insanely easy to get at ascii art (and with lots of fonts)", "",
+                        "And thank you to Yoshiki (@ElDeveloper) for the inspiration to live in text!"
+                      ],
+                      "footer": "Slides and code: https://github.com/wasade/PowerpointingIsRude"}
+}
