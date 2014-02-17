@@ -6,9 +6,11 @@ A simple terminal based slide presenter because powerpoint is terrible.
 To install
 ----------
 
-``pir`` currently depends on [bipy](https://github.com/biocore/bipy) which is unfortunately not ``pip`` installable at this time. Please see the ``bipy`` project for installation instructions. Once ``bipy`` is installed, please simply run:
+``pir`` currently depends on [bipy](https://github.com/biocore/bipy) which is unfortunately not ``pip`` installable directly at this time. The following should work though:
 
 ```bash
+pip install numpy
+pip install git+https://github.com/biocore/bipy.git
 pip install pir
 ```
 
