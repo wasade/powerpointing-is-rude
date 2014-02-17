@@ -3,76 +3,40 @@
 import re
 from bipy.core.workflow import Workflow
 from pyfiglet import figlet_format
-from functools import partial
 
-from pygments import highlight
-from pygments.lexers import PythonLexer
-from pygments.formatters import TerminalFormatter
+from .formatters import attributes
 
-def color_wrapper(color, text):
-    white = '\033[0m'
-    return "%s%s%s" % (color, text, white)
+attr_matchr = re.compile("(?P<attr>\[([^]]+)\])(?P<text>\(([^]]+)\))")
 
-pylex = PythonLexer()
-term_format = TerminalFormatter()
-def pygment_code(line):
-    return highlight(line, pylex, term_format)
-
+# requirements state checking methods
 has_header = lambda x: 'header' in x
 has_body = lambda x: 'body' in x
 has_footer = lambda x: 'footer' in x
 
-attr_matcher = re.compile("(?P<attr>\[([^]]+)\])(?P<text>\(([^]]+)\))")
-
-ATTRIBUTES = {
-        'red':partial(color_wrapper, '\033[91m'),
-        'blue':partial(color_wrapper, '\033[94m'),
-        'green':partial(color_wrapper, '\033[92m'),
-        'bullet': lambda x: '    %s' % x,
-        'code': pygment_code,
-        None: lambda x: x}
-
-def slide_iterator(data):
-    if 'title' in data:
-        title = data.pop('title')
-        title['slide'] = 'title'
-        yield title
-
-    main_slides = [key for key in data if key.startswith('slide')]
-    order = sorted(main_slides, key=lambda x: int(x.split()[-1]))
-
-    for current_slide in order:
-        slide = data[current_slide]
-        slide['slide'] = current_slide
-        yield slide
-
-    if 'acknowledgements' in data:
-        acks = data.pop('acknowledgements')
-        acks['slide'] = 'acknowledgements'
-        yield acks
-
-class PowerPointingIsRude(Workflow):
+class PowerpointingIsRude(Workflow):
     def initialize_state(self, item):
         self.state = item
 
     @Workflow.method(priority=100)
     @Workflow.requires(state=has_header)
     def process_header(self):
-        formatted = figlet_format(self.state['header'])
-        self.state['header'] = formatted
+        self._ascii_art_header()
+        self._basic_header()
 
-    @Workflow.method(priority=50)
+    @Workflow.method(priority=75)
     @Workflow.requires(state=has_body)
     def process_body(self):
         self.state['body'] = self._process_text(self.state['body'])
 
-    @Workflow.method(priority=10)
+    @Workflow.method(priority=50)
     @Workflow.requires(state=has_footer)
     def process_footer(self):
         self.state['footer'] = self._process_text(self.state['footer'])
 
-    @Workflow.method(priority=0)
+    @Workflow.method(priority=25)
     def finalize(self):
+        height = self.options['height']
+
         header = self.state.get('header', '')
         body = self._join_text(self.state.get('body', []))
         footer = self._join_text(self.state.get('footer', []))
@@ -81,10 +45,12 @@ class PowerPointingIsRude(Workflow):
         body_nlines = body.count('\n')
         footer_nlines = footer.count('\n')
 
-        if header_nlines + body_nlines + footer_nlines > 25:
-            raise ValueError("Slide %s is to big!" % self.state['slide'])
+        n_lines = (header_nlines + body_nlines + footer_nlines)
+        if n_lines > height:
+            raise ValueError("%s is to big, needs %d lines!" % (
+                self.state['slide'], n_lines))
 
-        body_footer_gap = 25 - (header_nlines + body_nlines) - footer_nlines
+        body_footer_gap = height - n_lines - 1
 
         slide = [header]
         slide.append(body)
@@ -93,7 +59,22 @@ class PowerPointingIsRude(Workflow):
 
         self.state['full slide'] = ''.join(slide)
 
+    @Workflow.requires(option='no_ascii_art', values=False)
+    def _ascii_art_header(self):
+        formatted = figlet_format(self.state['header'])
+        self.state['header'] = formatted
+
+    @Workflow.requires(option='no_ascii_art', values=True)
+    def _basic_header(self):
+        self.state['header'] = self.state['header'] + "\n\n"
+
     def _tokenize(self, text):
+        """Terrible tokenizer
+
+        Pygments supports restructured text, and is very likely to be a better
+        and more full featured approach. Would avoid the need for this
+        tokenizer
+        """
         for line in text.splitlines():
             line = line.strip()
 
@@ -103,9 +84,9 @@ class PowerPointingIsRude(Workflow):
                 continue
 
             for word in line.split():
-                if attr_matcher.search(word):
-                    attr = attr_matcher.search(word).group(2)
-                    word = attr_matcher.search(word).group(4)
+                if attr_matchr.search(word):
+                    attr = attr_matchr.search(word).group(2)
+                    word = attr_matchr.search(word).group(4)
                 elif word.startswith('*'):
                     attr = "bullet"
                 else:
@@ -115,11 +96,13 @@ class PowerPointingIsRude(Workflow):
             yield ("\n", None)
 
     def _apply_attribute(self, item, attribute):
-        if attribute not in ATTRIBUTES:
+        """Apply an attribute to a block of text"""
+        if attribute not in attributes:
             raise ValueError("Unknown attribute: [%s](%s)" % (attribute, item))
-        return ATTRIBUTES[attribute](item)
+        return attributes[attribute](item)
 
     def _process_text(self, text):
+        """Take a chunk of text, examine and apply attributes as necessary"""
         if isinstance(text, list):
             text = '\n'.join(text)
 
@@ -129,6 +112,10 @@ class PowerPointingIsRude(Workflow):
         return new_text
 
     def _join_text(self, data):
+        """Join the text as to avoid adding extra whitespace.
+
+        This is embarassing.
+        """
         to_join = []
         for v in data:
             to_join.append(v)
