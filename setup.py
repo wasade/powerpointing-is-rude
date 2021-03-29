@@ -54,7 +54,7 @@ setup(name='pir',
       url='https://github.com/wasade/powerpointing-is-rude',
       packages=['pir'],
       scripts=glob('scripts/pir*'),
-      install_requires=["Pygments == 1.6",
+      install_requires=["Pygments == 2.7.4",
                         "pyqi == 0.3.1",
                         "pyfiglet == 0.6.1"],
       classifiers=classifiers
